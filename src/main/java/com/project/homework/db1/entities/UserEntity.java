@@ -1,6 +1,9 @@
-package com.project.homework.entities;
+package com.project.homework.db1.entities;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotNull;
+
+import org.hibernate.validator.constraints.UniqueElements;
 
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -19,7 +22,7 @@ public class UserEntity {
     private String firstName;
     @Column
     private String lastName;
-    @Column
+    @Column(nullable = false)
     private String email;
     @Column
     private String password;

@@ -1,4 +1,4 @@
-package com.project.homework.entities;
+package com.project.homework.db1.entities;
 
 import java.sql.Timestamp;
 import java.util.List;
@@ -30,5 +30,6 @@ public class OrderEntity {
     private List<OrderItemEntity> orderItems;
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "order_by_user_id", nullable = false)
+    @MapsId
     private UserEntity user;
 }

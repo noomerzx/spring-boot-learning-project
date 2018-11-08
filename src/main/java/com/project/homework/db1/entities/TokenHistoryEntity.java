@@ -1,4 +1,4 @@
-package com.project.homework.entities;
+package com.project.homework.db1.entities;
 
 import java.sql.Timestamp;
 
@@ -18,7 +18,7 @@ public class TokenHistoryEntity {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
 
-    @Column
+    @Column(columnDefinition="text")
     private String token;
 
     @Column

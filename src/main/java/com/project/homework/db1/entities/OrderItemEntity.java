@@ -1,4 +1,4 @@
-package com.project.homework.entities;
+package com.project.homework.db1.entities;
 
 import javax.persistence.*;
 
@@ -17,6 +17,7 @@ public class OrderItemEntity {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     private Long id;
     @ManyToOne
+    @MapsId
     @JoinColumn(name = "order_id", nullable = false)
     private OrderEntity order;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

@@ -1,39 +1,48 @@
 package com.project.homework.services;
 
 import java.sql.Timestamp;
-import java.util.Calendar;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.project.homework.entities.CouponEntity;
-import com.project.homework.entities.OrderEntity;
-import com.project.homework.entities.OrderItemEntity;
-import com.project.homework.entities.UserEntity;
+import com.project.homework.db2.entities.CouponEntity;
+import com.project.homework.db1.entities.OrderEntity;
+import com.project.homework.db1.entities.OrderItemEntity;
+import com.project.homework.db1.entities.UserEntity;
+import com.project.homework.models.CouponDiscountStregegy;
+import com.project.homework.models.CouponDiscountStretegyFactory;
 import com.project.homework.models.Order;
 import com.project.homework.models.OrderItem;
-import com.project.homework.repositories.CouponRepository;
-import com.project.homework.repositories.OrderRepository;
-import com.project.homework.repositories.ProductRepository;
-import com.project.homework.repositories.UserRepository;
+import com.project.homework.db2.repositories.CouponRepository;
+import com.project.homework.db1.repositories.OrderRepository;
+import com.project.homework.db1.repositories.ProductRepository;
+import com.project.homework.db1.repositories.UserRepository;
 import com.project.homework.request.CreateOrderRequest;
 import com.project.homework.request.UpdateOrderRequest;
+import com.project.homework.utils.DateUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 @Component
 public class OrderService {
   @Autowired
-  OrderRepository orderRepository;
+  private OrderRepository orderRepository;
 
   @Autowired
-  ProductRepository productRepository;
+  private ProductRepository productRepository;
 
   @Autowired
-  UserRepository userRepository;
+  private UserRepository userRepository;
 
   @Autowired
-  CouponRepository couponRepository;
+  private CouponRepository couponRepository;
+
+  @Autowired
+  private DateUtils dateUtil;
+
+  @Autowired
+  private CouponDiscountStretegyFactory couponDiscountStretegyFactory;
 
   public List<Order> getAll () {
     List<OrderEntity> orders = orderRepository.findAll();
@@ -77,7 +86,7 @@ public class OrderService {
 
   public Boolean create (Long userId, CreateOrderRequest orderData) {
     try {
-      Timestamp currentTime = new Timestamp(Calendar.getInstance().getTime().getTime());
+      Timestamp currentTime = dateUtil.getCurrentTimestamp();
       OrderEntity order = new OrderEntity();
       UserEntity user = userRepository.findById(userId).get();
       Long orderHistoryCount = orderRepository.countByUser(user);
@@ -85,6 +94,7 @@ public class OrderService {
       Integer itemCount = (int)orderData.orderItems.stream().mapToInt(i -> (1 * i.productQuantity)).sum();
       order.setOrderItems(orderData.orderItems.stream().map(item -> {
         OrderItemEntity orderItem = new OrderItemEntity();
+        orderItem.setOrder(order);
         orderItem.setProductDiscount(item.productDiscount);
         orderItem.setProductName(item.productName);
         orderItem.setProductPrice(item.productPrice);
@@ -92,21 +102,17 @@ public class OrderService {
         orderItem.setProduct(productRepository.findById(item.productId).get());
         return orderItem;
       }).collect(Collectors.toList()));
+
       // discount by coupon
-      if (orderData.couponCode != null) {
-        CouponEntity coupon = couponRepository.findByCouponCode(orderData.couponCode);
-        if (coupon != null) {
-          if (coupon.getDiscountType() == "PRICE" && (net > coupon.getConditionAmount())) {
-            order.setCouponCode(coupon.getCouponCode());
-            if (coupon.getDiscountType() == "PERCENT") {
-              Float discount = net * (coupon.getDiscount()/100);
-              net -= discount;
-            } else {
-              net -= coupon.getDiscount();
-            }
-          } else if (coupon.getDiscountType() == "QUANTITY" && (itemCount > coupon.getConditionAmount())) {
-            order.setCouponCode(coupon.getCouponCode());
-          }
+      CouponEntity coupon = couponRepository.findByCouponCode(orderData.couponCode);
+      if (coupon != null && coupon.getAvailable() > 0) {
+        CouponDiscountStregegy couponDiscount = couponDiscountStretegyFactory.createCouponStretegy(coupon.getCouponType());
+        float totalDiscount = couponDiscount.calculateDiscount(coupon, net, itemCount);
+        if (totalDiscount > 0) {
+          net -= totalDiscount;
+          order.setCouponCode(orderData.couponCode);
+          coupon.setAvailable(coupon.getAvailable() - 1);
+          couponRepository.save(coupon);
         }
       }
 
@@ -129,13 +135,14 @@ public class OrderService {
       orderRepository.save(order);
       return true;
     } catch (Exception e) {
-      return false;
+      throw e;
+      // return false;
     }
   }
 
   public Boolean update (Long orderId, UpdateOrderRequest orderData) {
     try {
-      Timestamp currentTime = new Timestamp(Calendar.getInstance().getTime().getTime());
+      Timestamp currentTime = dateUtil.getCurrentTimestamp();
       OrderEntity order = orderRepository.findById(orderId).get();
       order.setStatus(orderData.status);
       order.setUpdateTime(currentTime);

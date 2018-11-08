@@ -1,6 +1,6 @@
-package com.project.homework.repositories;
+package com.project.homework.db1.repositories;
 
-import com.project.homework.entities.TokenHistoryEntity;
+import com.project.homework.db1.entities.TokenHistoryEntity;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

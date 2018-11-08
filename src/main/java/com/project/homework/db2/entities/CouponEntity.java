@@ -1,4 +1,4 @@
-package com.project.homework.entities;
+package com.project.homework.db2.entities;
 
 import java.sql.Timestamp;
 
@@ -20,8 +20,9 @@ public class CouponEntity {
     private Long id;
 
     private String couponCode;
-    private String counponType;
-    private Integer conditionAmount;
+    private String couponType;
+    private Integer conditionQuantity;
+    private Float conditionPrice;
     private String discountType;
     private Float discount;
     private Integer available;

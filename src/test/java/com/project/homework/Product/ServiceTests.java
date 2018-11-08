@@ -4,14 +4,16 @@ import com.project.homework.services.ProductService;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
-import com.project.homework.entities.ProductEntity;
+import com.project.homework.db1.entities.ProductEntity;
 import com.project.homework.models.Product;
-import com.project.homework.repositories.ProductRepository;
+import com.project.homework.db1.repositories.ProductRepository;
 import com.project.homework.request.CreateProductRequest;
 import com.project.homework.request.UpdateProductRequest;
 
@@ -47,7 +49,7 @@ public class ServiceTests {
   public void testGetById() {
     ProductEntity productE = new ProductEntity();
     productE.setId(1l);
-    when(productRepositoryMock.findById(any()).get()).thenReturn(productE);
+    when(productRepositoryMock.findById(any())).thenReturn(Optional.of(productE));
     Product result = productService.getById(any());
     assertEquals(result.id, productE.getId());
   }
@@ -58,6 +60,8 @@ public class ServiceTests {
     productData.name = "p1";
     productData.cost = 100f;
     productData.price = 130f;
+    ProductEntity product = new ProductEntity();
+    when(productRepositoryMock.save(any())).thenReturn(product);
     Boolean result = productService.create(productData);
     assertEquals(result, true);
   }
@@ -66,10 +70,11 @@ public class ServiceTests {
   public void testUpdate() {
     UpdateProductRequest productData = new UpdateProductRequest();
     ProductEntity productMock = new ProductEntity();
-    when(productRepositoryMock.findById(any()).get()).thenReturn(productMock);
+    when(productRepositoryMock.findById(any())).thenReturn(Optional.of(productMock));
     productData.name = "update product";
     productData.cost = 150f;
     productData.price = 190f;
+    when(productRepositoryMock.save(any())).thenReturn(productMock);
     Boolean result = productService.update(1l, productData);
     assertEquals(result, true);
   }
@@ -77,6 +82,7 @@ public class ServiceTests {
   @Test
   public void testDelete() {
     Boolean result = productService.delete(1l);
+    doNothing().when(productRepositoryMock).deleteById(any());
     assertEquals(result, true);
   }
 }

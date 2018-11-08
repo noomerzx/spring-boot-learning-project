@@ -1,15 +1,15 @@
 package com.project.homework.services;
 
 import java.sql.Timestamp;
-import java.util.Calendar;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.project.homework.entities.ProductEntity;
+import com.project.homework.db1.entities.ProductEntity;
 import com.project.homework.models.Product;
-import com.project.homework.repositories.ProductRepository;
+import com.project.homework.db1.repositories.ProductRepository;
 import com.project.homework.request.CreateProductRequest;
 import com.project.homework.request.UpdateProductRequest;
+import com.project.homework.utils.DateUtils;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -18,7 +18,10 @@ import org.springframework.stereotype.Component;
 public class ProductService {
 
   @Autowired
-  ProductRepository productRepository;
+  private ProductRepository productRepository;
+
+  @Autowired
+  private DateUtils dateUtil;
 
   public List<Product> getAll () {
     List<ProductEntity> products = productRepository.findAll();
@@ -46,7 +49,7 @@ public class ProductService {
 
   public Boolean create (CreateProductRequest productData) {
     try {
-      Timestamp currentTime = new Timestamp(Calendar.getInstance().getTime().getTime());
+      Timestamp currentTime = dateUtil.getCurrentTimestamp();
       ProductEntity product = new ProductEntity();
       product.setName(productData.name);
       product.setCost(productData.cost);
@@ -64,7 +67,7 @@ public class ProductService {
   public Boolean update (Long productId, UpdateProductRequest productData) {
     try {
       ProductEntity product = productRepository.findById(productId).get();
-      Timestamp currentTime = new Timestamp(Calendar.getInstance().getTime().getTime());
+      Timestamp currentTime = dateUtil.getCurrentTimestamp();
       product.setName(productData.name);
       product.setCost(productData.cost);
       product.setPrice(productData.price);
@@ -79,7 +82,7 @@ public class ProductService {
   public Boolean updateStock (Long productId, Integer stock) {
     try {
       ProductEntity product = productRepository.findById(productId).get();
-      Timestamp currentTime = new Timestamp(Calendar.getInstance().getTime().getTime());
+      Timestamp currentTime = dateUtil.getCurrentTimestamp();
       product.setStock(stock);
       product.setUpdateTime(currentTime);
       productRepository.save(product);

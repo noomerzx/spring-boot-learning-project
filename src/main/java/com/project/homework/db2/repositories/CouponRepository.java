@@ -1,6 +1,6 @@
-package com.project.homework.repositories;
+package com.project.homework.db2.repositories;
 
-import com.project.homework.entities.CouponEntity;
+import com.project.homework.db2.entities.CouponEntity;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

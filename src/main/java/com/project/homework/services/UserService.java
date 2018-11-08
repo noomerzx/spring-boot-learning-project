@@ -1,40 +1,68 @@
 package com.project.homework.services;
 
 import java.sql.Timestamp;
-import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import javax.persistence.EntityManagerFactory;
+import javax.transaction.Transactional;
+import javax.transaction.TransactionalException;
+
 import com.project.homework.models.User;
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTCreationException;
 import com.google.gson.Gson;
-import com.project.homework.entities.TokenHistoryEntity;
-import com.project.homework.entities.UserEntity;
-import com.project.homework.repositories.TokenHistoryRepository;
-import com.project.homework.repositories.UserRepository;
+import com.project.homework.db1.entities.TokenHistoryEntity;
+import com.project.homework.db1.entities.UserEntity;
+import com.project.homework.db1.repositories.TokenHistoryRepository;
+import com.project.homework.db1.repositories.UserRepository;
 import com.project.homework.request.CreateUserRequest;
 import com.project.homework.request.LoginUserRequest;
 import com.project.homework.request.UpdateUserRequest;
+import com.project.homework.utils.DateUtils;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Component
 public class UserService {
 
   @Autowired
-  UserRepository userRepository;
+  private UserRepository userRepository;
 
   @Autowired
-  TokenHistoryRepository tokenRepository;
+  private TokenHistoryRepository tokenRepository;
+
+  @Autowired
+  private DateUtils dateUtil;
+
+  @Autowired
+  @Qualifier("transactionManager")
+  private PlatformTransactionManager db1TransactionManager;
 
   @Value("${applicationSecret}")
   private String applicationSecret;
 
   @Value("${tokenTtl}")
-  private Long tokenTtll;
+  private Long tokenTtl;
 
+  public Boolean checkValidToken (String token) {
+    TokenHistoryEntity tokenE = tokenRepository.findByToken(token);
+    if (tokenE == null) {
+      return false;
+    } else {
+      return true;
+    }
+  }
 
   public Boolean InvokeToken (String token) {
     try {
@@ -48,21 +76,31 @@ public class UserService {
 
   public String generateToken (LoginUserRequest loginData) {
     try {
-      Timestamp currentTime = new Timestamp(Calendar.getInstance().getTime().getTime());
+      Timestamp currentTime = dateUtil.getCurrentTimestamp();
       UserEntity u = userRepository.findByEmailAndPassword(loginData.email, loginData.password);
+      if (u == null) {
+        throw new JWTCreationException("User not found.", null);
+      }
       Gson gson = new Gson();
-      User user = new User();
-      user.id = u.getId();
-      user.email = u.getEmail();
-      user.firstName = u.getFirstName();
-      user.lastName = u.getLastName();
+      HashMap<String, String> body = new HashMap<String, String>();
+      body.put("id", u.getId().toString());
+      body.put("email", u.getEmail());
+      body.put("firstName", u.getFirstName());
+      body.put("lastName", u.getLastName());
+      body.put("timestamp", currentTime.toString());
+      // User user = new User();
+      // user.id = u.getId();
+      // user.email = u.getEmail();
+      // user.firstName = u.getFirstName();
+      // user.lastName = u.getLastName();
+      System.out.println(applicationSecret);
       Algorithm algorithm = Algorithm.HMAC256(applicationSecret);
-      String jwtBody = gson.toJson(user);
+      String jwtBody = gson.toJson(body);
       String token = JWT.create().withIssuer("auth0").withSubject(jwtBody).sign(algorithm);
       TokenHistoryEntity tokenE = new TokenHistoryEntity();
       tokenE.setToken(token);
-      tokenE.setUserId(user.id);
-      tokenE.setTtl(tokenTtll);
+      tokenE.setUserId(u.getId());
+      tokenE.setTtl(tokenTtl);
       tokenE.setCreateTime(currentTime);
       tokenRepository.save(tokenE);
       return token;
@@ -103,7 +141,13 @@ public class UserService {
     return user;
   }
 
-  public boolean create (CreateUserRequest userData) {
+  @Transactional
+  public boolean create (CreateUserRequest userData) throws TransactionalException {
+    // DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+    // def.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    // def.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED);
+    // def.setReadOnly(false);
+    // TransactionStatus transaction = db1TransactionManager.getTransaction(def);
     try {
       UserEntity user = new UserEntity();
       user.setFirstName(userData.firstName);
@@ -111,9 +155,14 @@ public class UserService {
       user.setEmail(userData.email);
       user.setPassword(userData.password);
       userRepository.save(user);
-      return true;
+      throw new TransactionalException(applicationSecret, null);
+      // db1TransactionManager.rollback(transaction);
+      // return true;
     } catch (Exception e) {
-      return false;
+      System.out.println(e);
+      throw new TransactionalException(applicationSecret, null);
+      // db1TransactionManager.rollback(transaction);
+      // return false;
     }
   }
 

@@ -1,6 +1,6 @@
-package com.project.homework.repositories;
+package com.project.homework.db1.repositories;
 
-import com.project.homework.entities.UserEntity;
+import com.project.homework.db1.entities.UserEntity;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 

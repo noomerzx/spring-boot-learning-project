@@ -1,4 +1,4 @@
-package com.project.homework.entities;
+package com.project.homework.db1.entities;
 
 import java.sql.Timestamp;
 

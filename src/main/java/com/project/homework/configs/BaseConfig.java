@@ -18,8 +18,11 @@ public class BaseConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry){
       List<String> excludePaths = new ArrayList<>();
-      excludePaths.add("/users");
-      excludePaths.add("/users/login");
+      // excludePaths.add("/users");
+      excludePaths.add("/error");
+      excludePaths.add("/error/*");
+      // excludePaths.add("/users/login");
+      // excludePaths.add("/users/logout");
       registry.addInterceptor(authInterceptor).addPathPatterns("/**/*").excludePathPatterns(excludePaths);
     }
 }

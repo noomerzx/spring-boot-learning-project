@@ -1,7 +1,5 @@
 package com.project.homework.models;
 
-import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
@@ -10,7 +8,8 @@ import lombok.NoArgsConstructor;
 public class Coupon {
   public Long id;
   public String counponType;
-  public Integer conditionAmount;
+  public Float conditionPrice;
+  public Integer conditionQuantity;
   public String discountType;
   public Float discount;
   public Integer available;

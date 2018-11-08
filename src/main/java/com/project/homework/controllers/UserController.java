@@ -74,7 +74,7 @@ public class UserController {
     return response;
   }
 
-  @PostMapping("/")
+  @PostMapping("/create")
   public BaseResponse<HashMap<String, Boolean>> createUser(@RequestBody CreateUserRequest requestData) {
     BaseResponse<HashMap<String, Boolean>> response = new BaseResponse<HashMap<String, Boolean>>();
     HashMap<String, Boolean> result = new HashMap<String, Boolean>();
